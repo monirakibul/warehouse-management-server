@@ -42,9 +42,24 @@ async function run() {
         app.get('/inventory/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            const service = await inventoryCollection.findOne(query);
-            res.send(service);
+            const result = await inventoryCollection.findOne(query);
+            res.send(result);
         });
+
+        // update data
+        // app.put('/update/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const updatedItem = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const option = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: {
+        //             quantity: updatedItem.newQuantity
+        //         }
+        //     }
+        //     const result = await inventoryCollection.updateOne(filter, updatedDoc, option);
+        //     res.send(result);
+        // })
 
         // delete by id
         app.delete('/delete/:id', async (req, res) => {
