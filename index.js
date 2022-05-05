@@ -19,6 +19,7 @@ async function run() {
         console.log('1')
         await client.connect();
         const inventoryCollection = client.db('wareHouse').collection('item');
+        const blogsCollection = client.db('wareHouse').collection('blogs');
         console.log('connected')
         // get all inventory 
         app.get('/inventory', async (req, res) => {
@@ -71,6 +72,14 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const result = await inventoryCollection.deleteOne(query);
             res.send(result);
+        });
+
+        // get blogs 
+        app.get('/blogs', async (req, res) => {
+            const query = {};
+            const cursor = blogsCollection.find(query);
+            const blogs = await cursor.toArray();
+            res.send(blogs)
         });
 
     }
