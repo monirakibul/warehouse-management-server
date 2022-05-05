@@ -16,9 +16,10 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
     try {
+        console.log('1')
         await client.connect();
-        const inventoryCollection = client.db('wareHouse').collection('product');
-
+        const inventoryCollection = client.db('wareHouse').collection('item');
+        console.log('connected')
         // get all inventory 
         app.get('/inventory', async (req, res) => {
             const email = req.query.email;
@@ -44,22 +45,24 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const result = await inventoryCollection.findOne(query);
             res.send(result);
+            console.log(result)
         });
 
         // update data
-        // app.put('/update/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const updatedItem = req.body;
-        //     const filter = { _id: ObjectId(id) };
-        //     const option = { upsert: true };
-        //     const updatedDoc = {
-        //         $set: {
-        //             quantity: updatedItem.newQuantity
-        //         }
-        //     }
-        //     const result = await inventoryCollection.updateOne(filter, updatedDoc, option);
-        //     res.send(result);
-        // })
+        app.put('/update/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedItem = req.body;
+            console.log(updatedItem);
+            const filter = { _id: ObjectId(id) };
+            const option = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    updatedItem
+                }
+            }
+            const result = await inventoryCollection.updateOne(filter, updatedDoc, option);
+            res.send(result);
+        })
 
         // delete by id
         app.delete('/delete/:id', async (req, res) => {
@@ -73,6 +76,11 @@ async function run() {
     finally { }
 }
 run().catch(console.dir);
+
+client.connect(err => {
+
+});
+
 
 app.get('', (req, res) => {
     res.send('running');
