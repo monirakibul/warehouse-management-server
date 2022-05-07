@@ -23,8 +23,8 @@ function verifyToken(req, res, next) {
             return res.status(403).send({ message: 'Forbidden access' })
         }
         req.decoded = decoded;
+        next();
     })
-    next();
 
 }
 
@@ -50,14 +50,20 @@ async function run() {
 
 
         // get all inventory 
-        app.get('/inventory', verifyToken, async (req, res) => {
+        app.get('/inventory', async (req, res) => {
+            const query = { email: email }
+            const cursor = inventoryCollection.find(query);
+            products = await cursor.toArray();
+            res.send(products)
+
+        });
+
+        // get my items
+        app.get('/my-items', verifyToken, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.query.email;
             if (email === decodedEmail) {
-                let query = {};
-                if (email) {
-                    query = { email: email }
-                }
+                const query = { email: email }
                 const cursor = inventoryCollection.find(query);
                 products = await cursor.toArray();
                 res.send(products)
@@ -68,14 +74,14 @@ async function run() {
         });
 
         // add inventory 
-        app.post('/add-item', verifyToken, async (req, res) => {
+        app.post('/add-item', async (req, res) => {
             const newItem = req.body;
             const result = await inventoryCollection.insertOne(newItem);
             res.send(result);
         });
 
         // get inventory by id 
-        app.get('/inventory/:id', verifyToken, async (req, res) => {
+        app.get('/inventory/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await inventoryCollection.findOne(query);
@@ -83,7 +89,7 @@ async function run() {
         });
 
         // update data
-        app.put('/update/:id', verifyToken, async (req, res) => {
+        app.put('/update/:id', async (req, res) => {
             const id = req.params.id;
             let { quantity } = req.body;
             if (quantity < 1) {
@@ -101,7 +107,7 @@ async function run() {
         })
 
         // delete by id
-        app.delete('/delete/:id', verifyToken, async (req, res) => {
+        app.delete('/delete/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await inventoryCollection.deleteOne(query);
