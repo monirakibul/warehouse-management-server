@@ -42,6 +42,7 @@ async function run() {
 
         app.post('/login', async (req, res) => {
             const user = req.body;
+            console.log(user)
             const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN, {
                 expiresIn: '1d'
             });
@@ -60,8 +61,8 @@ async function run() {
 
         // get my items
         app.get('/my-items', verifyToken, async (req, res) => {
-            const decodedEmail = req.decoded.email;
-            const email = req.query.email;
+            const decodedEmail = req.decoded.email.toLocaleLowerCase();
+            const email = req.query.email.toLocaleLowerCase();
             if (email === decodedEmail) {
                 const query = { email: email }
                 const cursor = inventoryCollection.find(query);
