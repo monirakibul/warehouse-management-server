@@ -12,12 +12,27 @@ app.use(cors())
 app.use(express.json());
 
 
+function verifyToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        req.decoded = decoded;
+    })
+    next();
+
+}
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@emajohncluster.xb5sz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 async function run() {
     try {
-        console.log('1')
         await client.connect();
         const inventoryCollection = client.db('wareHouse').collection('item');
         const blogsCollection = client.db('wareHouse').collection('blogs');
@@ -35,26 +50,32 @@ async function run() {
 
 
         // get all inventory 
-        app.get('/inventory', async (req, res) => {
+        app.get('/inventory', verifyToken, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const email = req.query.email;
-            let query = {};
-            if (email) {
-                query = { email: email }
+            if (email === decodedEmail) {
+                let query = {};
+                if (email) {
+                    query = { email: email }
+                }
+                const cursor = inventoryCollection.find(query);
+                products = await cursor.toArray();
+                res.send(products)
             }
-            const cursor = inventoryCollection.find(query);
-            products = await cursor.toArray();
-            res.send(products)
+            else {
+                res.status(403).send({ message: 'Forbidden access' })
+            }
         });
 
         // add inventory 
-        app.post('/add-item', async (req, res) => {
+        app.post('/add-item', verifyToken, async (req, res) => {
             const newItem = req.body;
             const result = await inventoryCollection.insertOne(newItem);
             res.send(result);
         });
 
         // get inventory by id 
-        app.get('/inventory/:id', async (req, res) => {
+        app.get('/inventory/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await inventoryCollection.findOne(query);
@@ -62,7 +83,7 @@ async function run() {
         });
 
         // update data
-        app.put('/update/:id', async (req, res) => {
+        app.put('/update/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             let { quantity } = req.body;
             if (quantity < 1) {
@@ -80,7 +101,7 @@ async function run() {
         })
 
         // delete by id
-        app.delete('/delete/:id', async (req, res) => {
+        app.delete('/delete/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await inventoryCollection.deleteOne(query);
